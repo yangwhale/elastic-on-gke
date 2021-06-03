@@ -3,7 +3,7 @@ kind: Kibana
 metadata:
     name: dingo-kbn 
 spec:
-    version: 7.9.3
+    version: 7.12.1
     count: 1
     #http:
         #service:
@@ -25,10 +25,10 @@ spec:
               resources:
                   requests:
                       memory: 4Gi
-                      #cpu: 1
+                      cpu: 1400m
                   limits:
                       memory: 4Gi
-                      #cpu: 2
+                      cpu: 1400m
               readinessProbe:
                   exec:
                       command:

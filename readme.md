@@ -20,7 +20,7 @@ Now we are good to go!
 
 ## Quickstart 快速开始
 
-Check the [Advanced topics](https://github.com/bindiego/local_services/tree/develop/k8s/gke/elastic#advanced-topics) if you would like to:
+Check the [Advanced topics](https://github.com/elasticsearch-cn/elastic-on-gke#advanced-topics) if you would like to:
 
 - Customize the size of your k8s/GKE nodes and pools
 - Elasticsearch topology
@@ -44,7 +44,7 @@ Change the `region` variable on your choice, `asia-east1` by default.
 
 #### Choose a predefined Elasticsearch deployment
 
-You can later adjust all these settings to archieve your own goal. We will discuss more in [Advanced topics](https://github.com/bindiego/local_services/tree/develop/k8s/gke/elastic#advanced-topics).
+You can later adjust all these settings to archieve your own goal. We will discuss more in [Advanced topics](https://github.com/elasticsearch-cn/elastic-on-gke#advanced-topics).
 
 ##### Option 1: Single node 单节点（适合研发小伙伴）
 
@@ -68,7 +68,7 @@ Run `make init_allrole`
 | Coordinating x 1 | Coordinating x 1 |
 | ML x 1 | on any available node      |
 
-You could even further adjust this to a single zone or 3 zones with forced shared allocation awareness, let's discuss more details in the [Advanced topics](https://github.com/bindiego/local_services/tree/develop/k8s/gke/elastic#advanced-topics) so you could configure based on your needs.
+You could even further adjust this to a single zone or 3 zones with forced shared allocation awareness, let's discuss more details in the [Advanced topics](https://github.com/elasticsearch-cn/elastic-on-gke#advanced-topics) so you could configure based on your needs.
 
 Run `make init_prod`
 
@@ -80,7 +80,7 @@ Please consult [How to create & manage service accounts](https://cloud.google.co
 
 or Run `./bin/gcs_serviceaccount.sh` to create a service account and generate the json file to `./conf/gcs.client.default.credentials_file`. Please change the varialbes in the `./bin/gcs_serviceaccount.sh` for your environment.
 
-By now, in your *working directory*, you should be able to run `cat ./conf/gcs.client.default.credentials_file` to check the existence and the contents of the file. If you didn't do this, the auto script will later use `$GOOGLE_APPLICATION_CREDENTIALS`  environment variable to copy that file to the destination. You cannot skip this by now let's talk about how to disble in [Advanced topics](https://github.com/bindiego/local_services/tree/develop/k8s/gke/elastic#advanced-topics) if you really have to. 
+By now, in your *working directory*, you should be able to run `cat ./conf/gcs.client.default.credentials_file` to check the existence and the contents of the file. If you didn't do this, the auto script will later use `$GOOGLE_APPLICATION_CREDENTIALS`  environment variable to copy that file to the destination. You cannot skip this by now let's talk about how to disble in [Advanced topics](https://github.com/elasticsearch-cn/elastic-on-gke#advanced-topics) if you really have to. 
 
 ---
 
@@ -180,8 +180,8 @@ Optionally, you may want to add a DNS **CAA** record to specify the authority wh
 
 You will need to update 2 files now,
 
-- `./deploy/cert.yml`
-- `./deploy/lb.yml`
+- `./deploy/cert.yml` consult the template [`cert.yml`](https://github.com/elasticsearch-cn/elastic-on-gke/blob/develop/templates/cert.yml)
+- `./deploy/lb.yml` consult the template [`lb.yml`](https://github.com/elasticsearch-cn/elastic-on-gke/blob/develop/templates/lb.yml)
 
 Better do a quick `find & replace` in the text editor of your choice to have those domains configured properly according to your environment.
 
@@ -189,7 +189,7 @@ Once you done, it's the time to run `./bin/glb.sh cert`, wait the last step to d
 
 ##### Option 2: Regional TCP LB
 
-This one is really simple, depends on which service you would like to expose, simply uncomment the `spec.http` sections in either [`./deploy/es.yml`](https://github.com/bindiego/local_services/blob/develop/k8s/gke/elastic/templates/es.all_role.yml#L7-L10) or [`./deploy/kbn.yml`](https://github.com/bindiego/local_services/blob/develop/k8s/gke/elastic/templates/kbn.yml#L8-L11) or both. And you **do not** need to deploy the GLB in the end as you will do for option 1.
+This one is really simple, depends on which service you would like to expose, simply uncomment the `spec.http` sections in either [`./deploy/es.yml`](https://github.com/elasticsearch-cn/elastic-on-gke/blob/develop/templates/es.all_role.yml#L7-L10) or [`./deploy/kbn.yml`](https://github.com/elasticsearch-cn/elastic-on-gke/blob/develop/templates/kbn.yml#L8-L11) or both. And you **do not** need to deploy the GLB in the end as you will do for option 1.
 
 This will setup up regional TCP LB for your deployments respectively. Make sure you access the `ip:port` by using **`https`** protocol.
 
@@ -232,7 +232,7 @@ Basically, the above code does two things
 
 ##### Option 3: Internal access only
 
-(TBD)
+[infini gateway](https://hub.docker.com/r/medcl/infini-gateway)
 
 ### Deploy Elasticsearch Cluster
 
@@ -346,7 +346,7 @@ kind: Kibana
 metadata:
   name: kbn
   spec:
-    version: 7.9.1
+    version: 7.12.1
     count: 1
     config:
       elasticsearch.hosts:
@@ -364,7 +364,7 @@ kind: Kibana
 metadata:
   name: kbn
 spec:
-  version: 7.9.1
+  version: 7.12.1
   count: 1
   config:
     elasticsearch.hosts:
@@ -389,9 +389,19 @@ spec:
 
 ## APM Server
 
-(TBD)
+Use the `./bin/apm.sh` script for `deploy`, `clean`, `password`
 
 ---
+
+## Utils 工具
+
+### Retrieve Elasticsearch `elastic` user password 查询 `elastic` 用户密码
+
+`./bin/es.sh pw`
+
+### Reset / Rotate `elastic` user password 重制 `elastic` 用户密码
+
+`./bin/es.sh pwreset`
 
 ## Advanced topics
 
@@ -439,7 +449,13 @@ type: regional HDD
 
 best for: Data nodes (cold)
 
-### Elasticsearch nodes topology
+### Elasticsearch nodes topology, affinity & node/pool selection
+
+Topology is defined by `spec.nodeSets`, you may adjust accordingly to your design apart from the [predefined ones](https://github.com/elasticsearch-cn/elastic-on-gke#choose-a-predefined-elasticsearch-deployment)
+
+Affnity is controlled in [deployment yaml](https://github.com/elasticsearch-cn/elastic-on-gke/blob/develop/templates/es.prod.yml#L85), used to do shard allocation awareness etc. 
+
+GKE specific **node pool** selection is configured in [deployment yaml](https://github.com/elasticsearch-cn/elastic-on-gke/blob/develop/templates/es.prod.yml#L83), this could speparate different roles with different k8s/GKE nodes. E.g. Kibana, APM server and various Elasticsearch nodes.
 
 ### k8s/GKE cluster node & Elasticsearch node sizing
 
